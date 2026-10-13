@@ -1,0 +1,191 @@
+syntax = "proto3";
+
+package order.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/order/v1;orderv1";
+
+import "google/protobuf/timestamp.proto";
+import "common/v1/common.proto";
+import "payment/v1/payment.proto";
+
+// --- Cart (backed by Redis internally; exposed here so the gateway only
+// ever talks gRPC, never touches Redis directly) ---
+
+message CartItem {
+  string product_id = 1;
+  string seller_id = 2;
+  int32 quantity = 3;
+  common.v1.Money unit_price = 4; // snapshotted at add-to-cart time
+}
+
+message Cart {
+  string buyer_id = 1;
+  repeated CartItem items = 2;
+  google.protobuf.Timestamp expires_at = 3; // reservation-hold style TTL shown in the UI
+}
+
+message AddToCartRequest {
+  string buyer_id = 1;
+  string product_id = 2;
+  int32 quantity = 3;
+}
+
+message UpdateCartItemRequest {
+  string buyer_id = 1;
+  string product_id = 2;
+  int32 quantity = 3; // 0 removes the item
+}
+
+message GetCartRequest {
+  string buyer_id = 1;
+}
+
+// --- Orders ---
+
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PROCESSING = 1;   // saga in flight for one or more sub-orders
+  ORDER_STATUS_CONFIRMED = 2;    // all sub-orders confirmed
+  ORDER_STATUS_PARTIALLY_FAILED = 3; // some sub-orders confirmed, others compensated
+  ORDER_STATUS_FAILED = 4;       // all sub-orders compensated
+}
+
+enum SubOrderStatus {
+  SUB_ORDER_STATUS_UNSPECIFIED = 0;
+  SUB_ORDER_STATUS_RESERVING = 1;
+  SUB_ORDER_STATUS_CHARGING = 2;
+  SUB_ORDER_STATUS_CONFIRMED = 3;
+  SUB_ORDER_STATUS_COMPENSATING = 4;
+  SUB_ORDER_STATUS_FAILED = 5;
+  SUB_ORDER_STATUS_SHIPPED = 6;
+  SUB_ORDER_STATUS_DELIVERED = 7;
+  // Charge RPC returned PENDING (e.g. buyer hasn't approved a UPI collect
+  // request yet) - the saga is suspended, not failed. Resolved later by a
+  // webhook-triggered resume or a timeout sweep. See LLD.md Order Service
+  // section ("Async payment confirmation").
+  SUB_ORDER_STATUS_AWAITING_PAYMENT = 8;
+}
+
+// One sub-order per seller in the cart - this is what the saga in the
+// previous diagram runs against, once per sub-order.
+message SubOrder {
+  string id = 1;
+  string parent_order_id = 2;
+  string seller_id = 3;
+  repeated CartItem items = 4;
+  common.v1.Money subtotal = 5;
+  SubOrderStatus status = 6;
+  string reservation_id = 7; // set once Product Service confirms the reservation
+  string failure_reason = 8;
+}
+
+message Order {
+  string id = 1;
+  string buyer_id = 2;
+  common.v1.Address shipping_address = 3;
+  repeated SubOrder sub_orders = 4;
+  common.v1.Money total = 5;
+  OrderStatus status = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// Kicks off the saga: splits the cart into per-seller sub-orders and
+// orchestrates reserve -> charge -> confirm -> notify for each.
+message CheckoutRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string buyer_id = 2;
+  common.v1.Address shipping_address = 3;
+  string payment_method_token = 4; // opaque token from the client-side payment form
+  payment.v1.PaymentMethod payment_method = 5; // forwarded to each sub-order's ChargePayment call - see payment.proto
+}
+
+message CheckoutResponse {
+  Order order = 1;
+}
+
+message GetOrderRequest {
+  string order_id = 1;
+}
+
+message ListOrdersForBuyerRequest {
+  string buyer_id = 1;
+  common.v1.PageRequest page = 2;
+}
+
+message ListOrdersForBuyerResponse {
+  repeated Order orders = 1;
+  common.v1.PageResponse page = 2;
+}
+
+// Powers the seller order-fulfillment screen: only this seller's sub-orders,
+// across all buyers' parent orders.
+message ListSubOrdersForSellerRequest {
+  string seller_id = 1;
+  SubOrderStatus status_filter = 2;
+  common.v1.PageRequest page = 3;
+}
+
+// Admin-only - unscoped by buyer or seller, unlike ListOrdersForBuyer and
+// ListSubOrdersForSeller. Powers the admin orders screen.
+message ListAllOrdersRequest {
+  OrderStatus status_filter = 1;
+  common.v1.PageRequest page = 2;
+}
+
+message ListAllOrdersResponse {
+  repeated Order orders = 1;
+  common.v1.PageResponse page = 2;
+}
+
+message ListSubOrdersForSellerResponse {
+  repeated SubOrder sub_orders = 1;
+  common.v1.PageResponse page = 2;
+}
+
+message MarkSubOrderShippedRequest {
+  string sub_order_id = 1;
+  string seller_id = 2; // authorization check: seller may only update their own sub-orders
+  string tracking_number = 3;
+}
+
+// Buyer-initiated fallback for the shipped -> delivered transition, for
+// when a shipping carrier's webhook (see LLD.md Order Service "Delivery
+// confirmation") doesn't fire or isn't integrated for that carrier.
+message ConfirmDeliveryRequest {
+  string sub_order_id = 1;
+  string buyer_id = 2; // authorization check: must be this sub-order's buyer (via its parent order)
+}
+
+// Called by Product Service's CreateReview to check purchase history
+// before accepting a review - Product Service does not own this data
+// itself. Returns purchased = true only for a sub-order that reached
+// CONFIRMED or later (not for one still mid-saga or FAILED).
+message VerifyPurchaseRequest {
+  string buyer_id = 1;
+  string product_id = 2;
+}
+
+message VerifyPurchaseResponse {
+  bool purchased = 1;
+  string sub_order_id = 2; // set when purchased = true; the review attaches to this
+}
+
+service OrderService {
+  rpc AddToCart(AddToCartRequest) returns (Cart);
+  rpc UpdateCartItem(UpdateCartItemRequest) returns (Cart);
+  rpc GetCart(GetCartRequest) returns (Cart);
+
+  rpc Checkout(CheckoutRequest) returns (CheckoutResponse);
+  rpc GetOrder(GetOrderRequest) returns (Order);
+  rpc ListOrdersForBuyer(ListOrdersForBuyerRequest) returns (ListOrdersForBuyerResponse);
+
+  rpc ListSubOrdersForSeller(ListSubOrdersForSellerRequest) returns (ListSubOrdersForSellerResponse);
+  rpc MarkSubOrderShipped(MarkSubOrderShippedRequest) returns (SubOrder);
+
+  // Admin-only.
+  rpc ListAllOrders(ListAllOrdersRequest) returns (ListAllOrdersResponse);
+  rpc ConfirmDelivery(ConfirmDeliveryRequest) returns (SubOrder);
+
+  // Called by Product Service, not by any client directly.
+  rpc VerifyPurchase(VerifyPurchaseRequest) returns (VerifyPurchaseResponse);
+}

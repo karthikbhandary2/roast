@@ -1,0 +1,115 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/payment/v1;paymentv1";
+
+import "google/protobuf/timestamp.proto";
+import "common/v1/common.proto";
+
+// NOTE: each payment provider's webhook is a plain HTTP POST from an
+// external system, not a gRPC call - Payment Service exposes two small REST
+// listeners for these (one per provider, since each uses its own signature
+// scheme), separate from this gRPC API. See LLD.md Payment Service section.
+
+enum ChargeStatus {
+  CHARGE_STATUS_UNSPECIFIED = 0;
+  CHARGE_STATUS_PENDING = 1;       // provider is processing, webhook will confirm
+  CHARGE_STATUS_SUCCEEDED = 2;
+  CHARGE_STATUS_FAILED = 3;
+  CHARGE_STATUS_REFUNDED = 4;
+}
+
+// How the buyer is paying. UPI and NET_BANKING only apply when the charge
+// routes to Razorpay (INR sellers) - see common.v1.PaymentProvider. A
+// non-INR sub-order routes to Stripe and this is effectively always CARD.
+enum PaymentMethod {
+  PAYMENT_METHOD_UNSPECIFIED = 0;
+  PAYMENT_METHOD_CARD = 1;
+  PAYMENT_METHOD_UPI = 2;
+  PAYMENT_METHOD_NET_BANKING = 3;
+}
+
+// Saga step 2, called by Order Service once inventory is reserved for a
+// sub-order. Computes the platform-fee split at charge time so the seller's
+// share is never ambiguous later.
+//
+// Provider routing is NOT a caller choice: Payment Service looks up
+// seller_id's SellerProfile.provider (via User Service) and routes the
+// charge there. amount.currency_code MUST match what that provider
+// supports (INR for Razorpay, USD/GBP/JPY for Stripe) - a mismatch is a
+// codes.FailedPrecondition, meaning Product Service's listing-currency
+// validation (which mirrors this same rule at listing-creation time) had a
+// bug if it ever reaches here.
+message ChargePaymentRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string sub_order_id = 2;
+  string buyer_id = 3;
+  string seller_id = 4;
+  common.v1.Money amount = 5;
+  string payment_method_token = 6; // opaque: a Razorpay order/payment id or a Stripe PaymentMethod id, depending on the resolved provider
+  PaymentMethod payment_method = 7;
+}
+
+message ChargePaymentResponse {
+  string charge_id = 1;
+  ChargeStatus status = 2;
+  common.v1.Money platform_fee = 3;
+  common.v1.Money seller_share = 4;
+  string failure_reason = 5;
+  common.v1.PaymentProvider provider = 6; // which provider actually handled this charge, for the caller's logging/audit trail
+}
+
+// Compensating transaction for ChargePayment.
+message RefundPaymentRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string charge_id = 2;
+  string reason = 3;
+}
+
+message RefundPaymentResponse {
+  common.v1.SagaStepStatus status = 1;
+}
+
+message SellerBalance {
+  string seller_id = 1;
+  common.v1.Money available = 2;  // confirmed sales, not yet paid out
+  common.v1.Money pending = 3;    // sub-orders still mid-saga
+}
+
+message GetSellerBalanceRequest {
+  string seller_id = 1;
+}
+
+message Payout {
+  string id = 1;
+  string seller_id = 2;
+  common.v1.Money amount = 3;
+  string method = 4;
+  string status = 5; // "pending" | "paid" | "failed"
+  common.v1.PaymentProvider provider = 7; // always equals the seller's onboarded provider; carried here for display without a join
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message RequestPayoutRequest {
+  string seller_id = 1;
+}
+
+message ListPayoutsRequest {
+  string seller_id = 1;
+  common.v1.PageRequest page = 2;
+}
+
+message ListPayoutsResponse {
+  repeated Payout payouts = 1;
+  common.v1.PageResponse page = 2;
+}
+
+service PaymentService {
+  rpc ChargePayment(ChargePaymentRequest) returns (ChargePaymentResponse);
+  rpc RefundPayment(RefundPaymentRequest) returns (RefundPaymentResponse);
+
+  rpc GetSellerBalance(GetSellerBalanceRequest) returns (SellerBalance);
+  rpc RequestPayout(RequestPayoutRequest) returns (Payout);
+  rpc ListPayouts(ListPayoutsRequest) returns (ListPayoutsResponse);
+}

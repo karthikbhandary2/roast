@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/common/v1;commonv1";
+
+// Supported currencies are a closed set on purpose - every service that
+// prices, charges, or pays out money only needs to handle exactly these
+// four, so validation happens at the type level instead of as a runtime
+// string check repeated in every service.
+enum CurrencyCode {
+  CURRENCY_CODE_UNSPECIFIED = 0;
+  CURRENCY_CODE_USD = 1; // US Dollar
+  CURRENCY_CODE_INR = 2; // Indian Rupee
+  CURRENCY_CODE_GBP = 3; // British Pound
+  CURRENCY_CODE_JPY = 4; // Japanese Yen - NO minor unit, see amount_minor below
+}
+
+// Money is always expressed in minor units to avoid floating point errors
+// anywhere a price, charge, or balance is passed between services.
+//
+// EXCEPTION: JPY has no minor unit (no equivalent of "cents") - for
+// CURRENCY_CODE_JPY, amount_minor IS the whole-yen amount (¥500 -> 500, not
+// 50000). Every place that formats, sums, or converts Money must branch on
+// currency_code for this reason; do not assume a fixed 10^2 scale factor
+// for all four currencies. See LLD.md §1 for where this matters (fee-split
+// rounding in Payment Service).
+message Money {
+  CurrencyCode currency_code = 1;
+  int64 amount_minor = 2; // e.g. $19.00 -> 1900; but ¥500 -> 500 (see note above)
+}
+
+message Address {
+  string full_name = 1;
+  string line1 = 2;
+  string line2 = 3;
+  string city = 4;
+  string postal_code = 5;
+  string country_code = 6; // ISO 3166-1 alpha-2
+  string phone = 7;
+}
+
+// Cursor-based pagination, used on every list RPC per the API design goals
+// (offset pagination doesn't hold up once rows are being inserted/deleted
+// concurrently, which happens constantly on a catalog with live inventory).
+message PageRequest {
+  int32 page_size = 1;   // server clamps to a sane max, e.g. 50
+  string page_token = 2; // empty on first request
+}
+
+message PageResponse {
+  string next_page_token = 1; // empty when there are no more pages
+}
+
+// Every idempotent, state-changing RPC (reservations, charges, refunds)
+// takes an idempotency_key so a retried call after a timeout is safe.
+message RequestMetadata {
+  string idempotency_key = 1;
+  string correlation_id = 2; // ties a single saga's steps together in logs/traces
+}
+
+// The two payment processors this platform integrates with, chosen per
+// seller (see LLD.md Payment Service section for why routing is by seller,
+// not by buyer-chosen currency): Razorpay for INR/UPI/net banking, Stripe
+// Connect for USD/GBP/JPY card payments. A seller is onboarded with exactly
+// one provider, which in turn constrains which currency they may list in.
+enum PaymentProvider {
+  PAYMENT_PROVIDER_UNSPECIFIED = 0;
+  PAYMENT_PROVIDER_RAZORPAY = 1;
+  PAYMENT_PROVIDER_STRIPE = 2;
+}
+
+enum SagaStepStatus {
+  SAGA_STEP_STATUS_UNSPECIFIED = 0;
+  SAGA_STEP_STATUS_PENDING = 1;
+  SAGA_STEP_STATUS_COMPLETED = 2;
+  SAGA_STEP_STATUS_FAILED = 3;
+  SAGA_STEP_STATUS_COMPENSATED = 4;
+}

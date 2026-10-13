@@ -1,0 +1,186 @@
+syntax = "proto3";
+
+package product.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/product/v1;productv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+import "common/v1/common.proto";
+
+message Product {
+  string id = 1;
+  string seller_id = 2;
+  string name = 3;
+  string description = 4;
+  common.v1.Money price = 5;
+  string batch_label = 6;      // e.g. "Batch 14" - meaningful for a limited-harvest catalog
+  int32 stock_available = 7;   // total minus active reservations
+  int32 stock_reserved = 8;
+  ProductStatus status = 9;
+  google.protobuf.Timestamp updated_at = 10;
+  repeated string image_urls = 11; // ordered; first is the primary/card image. Public object-storage URLs, not uploaded through this API - see GetImageUploadURL.
+}
+
+enum ProductStatus {
+  PRODUCT_STATUS_UNSPECIFIED = 0;
+  PRODUCT_STATUS_LIVE = 1;
+  PRODUCT_STATUS_LOW_STOCK = 2;
+  PRODUCT_STATUS_SOLD_OUT = 3;
+  PRODUCT_STATUS_DRAFT = 4;
+}
+
+message CreateListingRequest {
+  string seller_id = 1;
+  string name = 2;
+  string description = 3;
+  common.v1.Money price = 4;
+  string batch_label = 5;
+  int32 initial_stock = 6;
+}
+
+// Image bytes never transit gRPC/this API - the client gets a short-lived
+// presigned PUT URL, uploads directly to object storage, then calls
+// UpdateListing with the resulting public URL(s) in image_urls. Keeps
+// Product Service stateless with respect to file bytes entirely.
+message GetImageUploadURLRequest {
+  string seller_id = 1;
+  string content_type = 2; // e.g. "image/jpeg" - validated server-side against an allowlist
+}
+
+message GetImageUploadURLResponse {
+  string upload_url = 1;   // PUT here, directly to object storage, within expires_in_seconds
+  string public_url = 2;   // the URL to submit back in UpdateListingRequest.image_urls once the upload succeeds
+  int64 expires_in_seconds = 3;
+}
+
+message UpdateListingRequest {
+  string product_id = 1;
+  string seller_id = 2; // used to authorize: sellers may only edit their own listings
+  string name = 3;
+  string description = 4;
+  common.v1.Money price = 5;
+  repeated string image_urls = 7; // replaces the full list - reordering or removing an image means resubmitting the whole array, not a separate add/remove RPC
+  ProductStatus status = 6;
+}
+
+message GetProductRequest {
+  string product_id = 1;
+}
+
+message ListProductsRequest {
+  string seller_id = 1;       // optional filter, used by the seller listings screen
+  bool in_stock_only = 2;
+  common.v1.PageRequest page = 3;
+}
+
+message ListProductsResponse {
+  repeated Product products = 1;
+  common.v1.PageResponse page = 2;
+}
+
+message ReservationLine {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+// Saga step 1, called by Order Service during checkout. Reserving decrements
+// stock_available and increments stock_reserved atomically per product; it
+// does not touch Payment. Safe to retry with the same idempotency_key.
+message ReserveInventoryRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string sub_order_id = 2;
+  string seller_id = 3;
+  repeated ReservationLine lines = 4;
+}
+
+message ReserveInventoryResponse {
+  string reservation_id = 1;
+  common.v1.SagaStepStatus status = 2;
+  string failure_reason = 3; // set when status is FAILED, e.g. "insufficient_stock"
+}
+
+// Compensating transaction for ReserveInventory - releases held stock back
+// to stock_available. Called when a later saga step (payment, confirmation)
+// fails for this sub-order.
+message ReleaseInventoryRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string reservation_id = 2;
+}
+
+message ReleaseInventoryResponse {
+  common.v1.SagaStepStatus status = 1;
+}
+
+// Called once the whole sub-order saga succeeds, to convert a temporary
+// reservation into a permanent deduction (stock_reserved -> sold).
+message ConfirmReservationRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string reservation_id = 2;
+}
+
+message ConfirmReservationResponse {
+  common.v1.SagaStepStatus status = 1;
+}
+
+message Review {
+  string id = 1;
+  string product_id = 2;
+  string buyer_id = 3;
+  string sub_order_id = 4; // proof of purchase this review is attached to
+  int32 rating = 5;        // 1-5
+  string comment = 6;
+  google.protobuf.Timestamp created_at = 7;
+}
+
+// Only a buyer with a CONFIRMED (or later) sub-order containing this
+// product may review it. Product Service does not own purchase history, so
+// it verifies this by calling OrderService.VerifyPurchase (cross-service
+// gRPC, same pattern as Payment calling User Service to resolve a seller's
+// provider) rather than trusting a client-supplied claim. See LLD.md
+// Product Service "Reviews" section.
+message CreateReviewRequest {
+  string product_id = 1;
+  string buyer_id = 2;
+  int32 rating = 3;
+  string comment = 4;
+}
+
+message UpdateReviewRequest {
+  string review_id = 1;
+  string buyer_id = 2; // authorization: must match reviews.buyer_id
+  int32 rating = 3;
+  string comment = 4;
+}
+
+message DeleteReviewRequest {
+  string review_id = 1;
+  string buyer_id = 2;
+}
+
+message ListReviewsRequest {
+  string product_id = 1;
+  common.v1.PageRequest page = 2;
+}
+
+message ListReviewsResponse {
+  repeated Review reviews = 1;
+  common.v1.PageResponse page = 2;
+}
+
+service ProductService {
+  rpc CreateListing(CreateListingRequest) returns (Product);
+  rpc UpdateListing(UpdateListingRequest) returns (Product);
+  rpc GetProduct(GetProductRequest) returns (Product);
+  rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc GetImageUploadURL(GetImageUploadURLRequest) returns (GetImageUploadURLResponse);
+
+  rpc CreateReview(CreateReviewRequest) returns (Review);
+  rpc UpdateReview(UpdateReviewRequest) returns (Review);
+  rpc DeleteReview(DeleteReviewRequest) returns (google.protobuf.Empty);
+  rpc ListReviews(ListReviewsRequest) returns (ListReviewsResponse);
+
+  rpc ReserveInventory(ReserveInventoryRequest) returns (ReserveInventoryResponse);
+  rpc ReleaseInventory(ReleaseInventoryRequest) returns (ReleaseInventoryResponse);
+  rpc ConfirmReservation(ConfirmReservationRequest) returns (ConfirmReservationResponse);
+}

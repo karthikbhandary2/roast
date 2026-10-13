@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/notification/v1;notificationv1";
+
+import "common/v1/common.proto";
+
+// Saga step 4. Failures here are retried with backoff, not compensated -
+// see the saga diagram notes. Most calls to this service in practice will
+// arrive as Kafka events rather than direct gRPC calls, but the gRPC API is
+// kept for synchronous cases (e.g. gateway-triggered "resend confirmation").
+
+enum Channel {
+  CHANNEL_UNSPECIFIED = 0;
+  CHANNEL_EMAIL = 1;
+  CHANNEL_SMS = 2;
+}
+
+message SendOrderConfirmationRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string buyer_id = 2;
+  string order_id = 3;
+}
+
+message SendShippingUpdateRequest {
+  common.v1.RequestMetadata metadata = 1;
+  string buyer_id = 2;
+  string sub_order_id = 3;
+  string tracking_number = 4;
+}
+
+message SendLowStockAlertRequest {
+  string seller_id = 1;
+  string product_id = 2;
+  int32 stock_remaining = 3;
+}
+
+message SendPayoutNotificationRequest {
+  string seller_id = 1;
+  string payout_id = 2;
+}
+
+message SendResponse {
+  bool queued = 1;
+  string notification_id = 2;
+}
+
+service NotificationService {
+  rpc SendOrderConfirmation(SendOrderConfirmationRequest) returns (SendResponse);
+  rpc SendShippingUpdate(SendShippingUpdateRequest) returns (SendResponse);
+  rpc SendLowStockAlert(SendLowStockAlertRequest) returns (SendResponse);
+  rpc SendPayoutNotification(SendPayoutNotificationRequest) returns (SendResponse);
+}

@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package search.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/search/v1;searchv1";
+
+import "common/v1/common.proto";
+
+// SearchService has no write RPCs on purpose. Its index is built entirely by
+// a Kafka consumer reacting to product.created / product.updated /
+// inventory.changed events published by Product Service - keeping it a pure
+// read model (CQRS), so search load never competes with Product Service's
+// transactional writes.
+
+message SearchHit {
+  string product_id = 1;
+  string seller_id = 2;
+  string name = 3;
+  common.v1.Money price = 4;
+  string roast_level = 5; // example facet field for this catalog
+  string origin = 6;      // example facet field
+  bool in_stock = 7;
+  double relevance_score = 8;
+}
+
+message Facet {
+  string name = 1;         // e.g. "roast_level"
+  repeated FacetValue values = 2;
+}
+
+message FacetValue {
+  string value = 1;
+  int32 count = 2;
+}
+
+message SearchProductsRequest {
+  string query = 1;
+  map<string, string> filters = 2; // e.g. {"roast_level": "light", "origin": "Ethiopia"}
+  bool in_stock_only = 3;
+  common.v1.PageRequest page = 4;
+}
+
+message SearchProductsResponse {
+  repeated SearchHit hits = 1;
+  repeated Facet facets = 2;
+  common.v1.PageResponse page = 3;
+}
+
+service SearchService {
+  rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
+}

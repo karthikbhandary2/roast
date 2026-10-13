@@ -1,0 +1,42 @@
+// Search Service has no relational schema on purpose - it's a pure read
+// model, not a system of record. This is the Elasticsearch/OpenSearch index
+// mapping instead of a SQL file. The index is populated entirely by a Kafka
+// consumer reacting to events published by Product Service
+// (product.created, product.updated, product.deleted, inventory.changed);
+// nothing ever writes here directly over gRPC.
+//
+// PUT /products
+{
+  "mappings": {
+    "properties": {
+      "product_id":          { "type": "keyword" },
+      "seller_id":            { "type": "keyword" },
+      "name":                 { "type": "text", "analyzer": "standard" },
+      "description":          { "type": "text" },
+      "price_amount_minor":   { "type": "long" },
+      "price_currency":       { "type": "keyword" },
+      "batch_label":          { "type": "keyword" },
+      "roast_level":          { "type": "keyword" },
+      "origin":               { "type": "keyword" },
+      "in_stock":             { "type": "boolean" },
+      "stock_available":      { "type": "integer" },
+      "status":               { "type": "keyword" },
+      "updated_at":           { "type": "date" }
+    }
+  },
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  }
+}
+
+// roast_level and origin are indexed as `keyword` (exact-match) rather than
+// `text`, since the catalog/search wireframe uses them as filter facets
+// (dropdowns), not free-text search fields. `name` and `description` stay
+// `text` so the search bar can do relevance-ranked full-text matching.
+//
+// Consumer offset tracking: store the last-processed Kafka offset per
+// partition in a small side table (or a dedicated `_meta` document in this
+// same index) so a restarted consumer resumes rather than reprocessing the
+// whole topic - though for GA you'd typically just rely on the consumer
+// group's committed offsets in Kafka itself.

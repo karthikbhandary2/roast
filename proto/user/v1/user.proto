@@ -1,0 +1,171 @@
+syntax = "proto3";
+
+package user.v1;
+
+option go_package = "github.com/roastco/ecommerce/gen/user/v1;userv1";
+
+import "google/protobuf/timestamp.proto";
+import "common/v1/common.proto";
+
+enum Role {
+  ROLE_UNSPECIFIED = 0;
+  ROLE_BUYER = 1;
+  ROLE_SELLER = 2;
+  ROLE_ADMIN = 3;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  string display_name = 3;
+  repeated Role roles = 4; // a user can be a buyer and a seller at once
+  google.protobuf.Timestamp created_at = 5;
+}
+
+// A seller's business profile is an extension of a User, not a separate
+// identity - it always hangs off a user_id.
+message SellerProfile {
+  string user_id = 1;
+  string business_name = 2;
+  common.v1.PaymentProvider provider = 7; // chosen at onboarding; determines which currency this seller may list in (see RegisterSellerRequest)
+  string payout_method = 3;    // e.g. "UPI", "bank_account", "ACH" - display detail only, provider is the source of truth for routing
+  string payout_account_ref = 4; // opaque token from the payment provider (Razorpay linked account id / Stripe connected account id), never a raw account number
+  double commission_rate = 5;  // platform fee, e.g. 0.10 for 10%
+  SellerStatus status = 6;
+}
+
+enum SellerStatus {
+  SELLER_STATUS_UNSPECIFIED = 0;
+  SELLER_STATUS_PENDING_REVIEW = 1;
+  SELLER_STATUS_ACTIVE = 2;
+  SELLER_STATUS_SUSPENDED = 3; // was active, admin pulled approval
+  SELLER_STATUS_REJECTED = 4;  // never approved - distinct from suspended so the seller sees "application rejected" not "account suspended"
+}
+
+message RegisterRequest {
+  string email = 1;
+  string password = 2; // gateway/service hashes before storage; never logged
+  string display_name = 3;
+}
+
+message RegisterResponse {
+  User user = 1;
+}
+
+message AuthenticateRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message AuthenticateResponse {
+  string access_token = 1;  // short-lived JWT
+  string refresh_token = 2;
+  int64 expires_in_seconds = 3;
+}
+
+// Called by the API Gateway's auth middleware on every incoming request
+// that requires authentication - kept as a fast, dedicated RPC rather than
+// piggybacking on GetUser so the gateway's hot path stays minimal.
+message ValidateTokenRequest {
+  string access_token = 1;
+}
+
+// Revokes the given refresh token AND sets users.tokens_valid_after = now(),
+// so any access token issued before this moment is rejected for
+// seller/admin-gated actions going forward (see LLD.md §2.2 "Token
+// revocation" and §4.3). Does not instantly invalidate buyer-level actions
+// - see that section for why the cutoff is only enforced there.
+message LogoutRequest {
+  string user_id = 1;
+  string refresh_token = 2;
+}
+
+message LogoutResponse {
+  bool success = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string user_id = 2;
+  repeated Role roles = 3;
+}
+
+message GetUserRequest {
+  string user_id = 1;
+}
+
+message UpdateProfileRequest {
+  string user_id = 1;
+  string display_name = 2;
+}
+
+message RegisterSellerRequest {
+  string user_id = 1;
+  string business_name = 2;
+  common.v1.PaymentProvider provider = 5; // immutable after onboarding - switching providers means re-onboarding, not an update, since payout history doesn't move between providers
+  string payout_method = 3;
+  string payout_account_ref = 4;
+  // Set only for a seller who already has a profile and is deliberately
+  // switching providers (self-service re-registration otherwise fails with
+  // codes.AlreadyExists). Requires the seller's OLD provider balance to be
+  // fully paid out first - see LLD.md User Service "Provider switching".
+  bool force_reonboard = 6;
+}
+
+message RegisterSellerResponse {
+  SellerProfile profile = 1;
+}
+
+message GetSellerProfileRequest {
+  string user_id = 1;
+}
+
+// Updates payout details WITHIN the seller's existing provider (e.g. a new
+// bank account on the same Razorpay/Stripe account). Does not change
+// provider - see the comment on RegisterSellerRequest.provider.
+// Admin-only. The only legal transitions are enforced in the service layer,
+// not here: pending_review -> active | rejected; active -> suspended;
+// suspended -> active (reinstatement). rejected is terminal - a rejected
+// seller reapplies via RegisterSeller again (an upsert back to
+// pending_review), not through this RPC.
+message UpdateSellerStatusRequest {
+  string user_id = 1;
+  SellerStatus status = 2;
+  string reason = 3;        // shown to the seller, and stored in the audit trail
+  string admin_user_id = 4; // who made this decision - audit trail, not authorization (authorization is the caller's JWT role)
+}
+
+// Powers the admin "sellers awaiting review" queue.
+message ListSellersRequest {
+  SellerStatus status_filter = 1;
+  common.v1.PageRequest page = 2;
+}
+
+message ListSellersResponse {
+  repeated SellerProfile sellers = 1;
+  common.v1.PageResponse page = 2;
+}
+
+message UpdateSellerPayoutInfoRequest {
+  string user_id = 1;
+  string payout_method = 2;
+  string payout_account_ref = 3;
+}
+
+service UserService {
+  rpc Register(RegisterRequest) returns (RegisterResponse);
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUser(GetUserRequest) returns (User);
+  rpc UpdateProfile(UpdateProfileRequest) returns (User);
+
+  rpc RegisterSeller(RegisterSellerRequest) returns (RegisterSellerResponse);
+  rpc GetSellerProfile(GetSellerProfileRequest) returns (SellerProfile);
+  rpc UpdateSellerPayoutInfo(UpdateSellerPayoutInfoRequest) returns (SellerProfile);
+
+  // Admin-only (caller must hold role "admin" - enforced via
+  // pkg/middleware.RequireRole, same pattern as every other admin RPC).
+  rpc UpdateSellerStatus(UpdateSellerStatusRequest) returns (SellerProfile);
+  rpc ListSellers(ListSellersRequest) returns (ListSellersResponse);
+}

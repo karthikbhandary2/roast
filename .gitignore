@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Go
+bin/
+*.test
+*.out
+go.work.sum
+
+# Node / web
+node_modules/
+web/dist/
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# NOTE: gen/go/ (generated protobuf code) is deliberately NOT ignored.
+# The Docker builds copy it into the image, so it must exist on disk.

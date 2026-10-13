@@ -1,0 +1,28 @@
+# One Dockerfile for every Go service. Build context is the REPO ROOT, because
+# each service resolves ../../pkg and ../../gen/go through replace directives.
+#
+#   docker build -f deployments/docker/Dockerfile.go-service --build-arg SERVICE=user .
+#
+# GO_VERSION must be >= the "go" line in the service's go.mod, because the
+# official golang images do not download newer toolchains on their own.
+ARG GO_VERSION=1.25
+
+FROM golang:${GO_VERSION}-alpine AS build
+ARG SERVICE
+WORKDIR /src
+
+# go.work lists modules that are not copied into this image, so ignore it and
+# let the replace directives in each go.mod do the resolving.
+ENV GOWORK=off CGO_ENABLED=0 GOTOOLCHAIN=auto
+
+COPY pkg ./pkg
+COPY gen ./gen
+COPY services/${SERVICE} ./services/${SERVICE}
+
+WORKDIR /src/services/${SERVICE}
+RUN go mod download
+RUN go build -trimpath -ldflags="-s -w" -o /out/server ./cmd/server
+
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /out/server /server
+ENTRYPOINT ["/server"]
