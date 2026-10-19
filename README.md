@@ -1,5 +1,7 @@
 # Roast Co. Marketplace: E-Commerce Microservices Platform
 
+Link: [roastco.karthikbhandary.com](https://roastco.karthikbhandary.com)
+
 A multi-vendor specialty coffee marketplace built as a Go microservices system with a React frontend. The product domain is deliberately simple so the engineering effort goes into distributed-systems concerns: sagas, idempotency, event-driven read models, and failure handling.
 
 > This README is a living document. Sections marked **(planned)** describe intended design that is not implemented yet. See [Status](#12-status--roadmap).
