@@ -19,12 +19,20 @@ import (
 func New(deps *handlers.Deps, log *slog.Logger, jwtSecret []byte, allowedOrigin string) http.Handler {
 	r := chi.NewRouter()
 
+	origins := []string{"*"}
+	allowCredentials := false
+	if allowedOrigin != "" && allowedOrigin != "*" {
+		origins = []string{allowedOrigin}
+		allowCredentials = true
+	}
+
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{allowedOrigin},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE"},
-		AllowedHeaders:   []string{"Authorization", "Content-Type", "Idempotency-Key", "X-Request-ID"},
+		AllowedOrigins:   origins,
+		AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
 		ExposedHeaders:   []string{"X-Request-ID"},
-		AllowCredentials: true,
+		AllowCredentials: allowCredentials,
 	}))
 	r.Use(gatewaymw.RequestLogger(log))
 
