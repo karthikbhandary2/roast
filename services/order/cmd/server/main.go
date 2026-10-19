@@ -54,7 +54,7 @@ func main() {
 	defer pool.Close()
 
 	redis := redisclient.New(
-		config.String("REDIS_ADDR", "localhost:6380"),
+		config.String("REDIS_URL", config.String("REDIS_ADDR", "localhost:6380")),
 		config.String("REDIS_PASSWORD", ""),
 		config.Int("REDIS_DB", 0),
 	)
