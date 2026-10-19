@@ -272,7 +272,7 @@ func sellerStatusFromString(s string) userv1.SellerStatus {
 }
 
 var providerToString = map[commonv1.PaymentProvider]string{
-	commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY: "phonepe",
+	commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY: "razorpay",
 	commonv1.PaymentProvider_PAYMENT_PROVIDER_STRIPE:   "stripe",
 }
 

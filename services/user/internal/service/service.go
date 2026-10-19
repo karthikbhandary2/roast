@@ -265,8 +265,8 @@ func (s *Service) RegisterSeller(ctx context.Context, in RegisterSellerInput) (*
 	if in.BusinessName == "" || len(in.BusinessName) > 120 {
 		return nil, invalid("business_name must be 1-120 characters")
 	}
-	if in.Provider != "razorpay" && in.Provider != "stripe" {
-		return nil, invalid("provider must be razorpay or stripe")
+	if in.Provider != "phonepe" && in.Provider != "razorpay" && in.Provider != "stripe" {
+		return nil, invalid("provider must be phonepe, razorpay, or stripe")
 	}
 	if strings.TrimSpace(in.PayoutMethod) == "" || strings.TrimSpace(in.PayoutAccountRef) == "" {
 		return nil, invalid("payout_method and payout_account_ref are required")

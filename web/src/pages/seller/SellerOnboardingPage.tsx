@@ -112,18 +112,18 @@ export const SellerOnboardingPage: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <button
                     type="button"
-                    onClick={() => setProvider('razorpay')}
+                    onClick={() => setProvider('phonepe' as any)}
                     style={{
                       padding: '12px',
                       borderRadius: 'var(--radius)',
-                      border: `2px solid ${provider === 'razorpay' ? 'var(--fill-accent)' : 'var(--border)'}`,
-                      background: provider === 'razorpay' ? 'var(--badge-warning-bg)' : 'var(--surface-2)',
+                      border: `2px solid ${provider === ('phonepe' as any) || provider === 'razorpay' ? 'var(--fill-accent)' : 'var(--border)'}`,
+                      background: provider === ('phonepe' as any) || provider === 'razorpay' ? 'var(--badge-warning-bg)' : 'var(--surface-2)',
                       textAlign: 'left',
                       cursor: 'pointer',
                     }}
                   >
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>Razorpay (INR)</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>UPI, Cards, Net Banking</div>
+                    <div style={{ fontSize: '13px', fontWeight: 600 }}>PhonePe (UPI / INR)</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>UPI, PhonePe QR & Direct Pay</div>
                   </button>
 
                   <button

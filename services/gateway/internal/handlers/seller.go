@@ -15,6 +15,7 @@ import (
 )
 
 var providerFromString = map[string]commonv1.PaymentProvider{
+	"phonepe":  commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY,
 	"razorpay": commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY,
 	"stripe":   commonv1.PaymentProvider_PAYMENT_PROVIDER_STRIPE,
 }
