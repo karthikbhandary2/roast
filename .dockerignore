@@ -1,5 +1,6 @@
 .git
 .env
 docs
-web
+web/node_modules
+web/dist
 **/*.md

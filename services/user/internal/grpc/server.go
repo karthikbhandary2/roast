@@ -22,20 +22,29 @@ import (
 	"github.com/roastco/ecommerce/services/user/internal/service"
 )
 
-// publicMethods are callable without a token: you can't present a token
-// before you have logged in.
+// publicMethods are callable without a token: login/registration, plus
+// read-only lookups used by other internal services (Product, Payment, Order).
 var publicMethods = map[string]bool{
-	"/user.v1.UserService/Register":      true,
-	"/user.v1.UserService/Authenticate":  true,
-	"/user.v1.UserService/ValidateToken": true,
+	"/user.v1.UserService/Register":         true,
+	"/user.v1.UserService/Authenticate":     true,
+	"/user.v1.UserService/ValidateToken":    true,
+	"/user.v1.UserService/GetSellerProfile": true,
+	"/user.v1.UserService/GetUser":          true,
 }
 
 // AuthInterceptor requires a valid JWT on every method except publicMethods,
 // reusing the shared interceptor from pkg/middleware for the actual check.
+// For publicMethods, if a token is present, it extracts claims into context
+// so methods like GetSellerProfile can still detect isOwnerOrAdmin.
 func AuthInterceptor(secret []byte) grpc.UnaryServerInterceptor {
 	auth := middleware.AuthUnaryInterceptor(secret)
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		if publicMethods[info.FullMethod] {
+			// Try attaching claims if token is provided, but don't fail if absent
+			_, _ = auth(ctx, req, info, func(c context.Context, _ any) (any, error) {
+				ctx = c
+				return nil, nil
+			})
 			return handler(ctx, req)
 		}
 		return auth(ctx, req, info, handler)
@@ -263,11 +272,14 @@ func sellerStatusFromString(s string) userv1.SellerStatus {
 }
 
 var providerToString = map[commonv1.PaymentProvider]string{
-	commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY: "razorpay",
+	commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY: "phonepe",
 	commonv1.PaymentProvider_PAYMENT_PROVIDER_STRIPE:   "stripe",
 }
 
 func providerFromString(s string) commonv1.PaymentProvider {
+	if s == "phonepe" || s == "razorpay" {
+		return commonv1.PaymentProvider_PAYMENT_PROVIDER_RAZORPAY
+	}
 	for p, name := range providerToString {
 		if name == s {
 			return p

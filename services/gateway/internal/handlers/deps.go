@@ -31,6 +31,9 @@ type DownstreamAddrs struct {
 	OrderService        string
 	PaymentService      string
 	NotificationService string
+	PaymentHTTPAddr     string
+	RazorpayKeyID       string
+	RazorpayKeySecret   string
 	RedisAddr           string
 	RedisPassword       string
 	RedisDB             int
@@ -48,6 +51,10 @@ type Deps struct {
 	Payment      paymentv1.PaymentServiceClient
 	Notification notificationv1.NotificationServiceClient
 	Redis        *redisclient.Client
+
+	PaymentHTTPAddr   string
+	RazorpayKeyID     string
+	RazorpayKeySecret string
 
 	UserBreaker    *middleware.Breaker
 	ProductBreaker *middleware.Breaker
@@ -118,6 +125,10 @@ func DialDownstreams(ctx context.Context, addrs DownstreamAddrs) (*Deps, error) 
 		Payment:      paymentv1.NewPaymentServiceClient(paymentConn),
 		Notification: notificationv1.NewNotificationServiceClient(notificationConn),
 		Redis:        redis,
+
+		PaymentHTTPAddr:   addrs.PaymentHTTPAddr,
+		RazorpayKeyID:     addrs.RazorpayKeyID,
+		RazorpayKeySecret: addrs.RazorpayKeySecret,
 
 		UserBreaker:    middleware.NewBreaker("user-service"),
 		ProductBreaker: middleware.NewBreaker("product-service"),

@@ -5,7 +5,10 @@ use (
 	./pkg
 	./services/gateway
 	./services/user
+	./services/product
+	./services/payment
+	./services/order
+	./services/search
+	./services/notification
 )
 
-// Add each internal service here as its go.mod is created, e.g.:
-//   ./services/order

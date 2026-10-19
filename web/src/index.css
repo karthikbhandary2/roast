@@ -1,0 +1,219 @@
+:root {
+  --surface-1: #ffffff;
+  --surface-2: #f8f8f6;
+  --surface-3: #f0efeb;
+  --surface-card: #ffffff;
+  --border: #e6e5e0;
+  --border-strong: #c8c7bf;
+  --border-accent: #d97757;
+  
+  --text-primary: #191816;
+  --text-secondary: #67655f;
+  --text-muted: #95938b;
+  --text-accent: #c6613f;
+  --text-success: #24754f;
+  --text-danger: #d43b3b;
+  --text-warning: #b36b00;
+
+  --fill-primary: #1f1e1c;
+  --on-primary: #ffffff;
+  --fill-accent: #d97757;
+  --on-accent: #ffffff;
+  --fill-accent-hover: #c46343;
+
+  --badge-success-bg: #eaf6ef;
+  --badge-danger-bg: #fdf0f0;
+  --badge-warning-bg: #fdf5ea;
+  --badge-neutral-bg: #f2f1ed;
+
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.12);
+
+  --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Newsreader', Georgia, serif;
+  --font-mono: 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--surface-2);
+  color: var(--text-primary);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 14px;
+}
+
+/* Custom form inputs & modern validation */
+.input-control {
+  width: 100%;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input-control:focus {
+  border-color: var(--fill-accent);
+  box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.15);
+}
+
+.input-control:user-invalid {
+  border-color: var(--text-danger);
+  background-color: #fff8f8;
+}
+
+.input-control:user-invalid + .error-msg {
+  display: block;
+}
+
+.error-msg {
+  display: none;
+  font-size: 12px;
+  color: var(--text-danger);
+  margin-top: 4px;
+}
+
+/* Common container */
+.container {
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--fill-primary);
+  color: var(--on-primary);
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn-primary:hover {
+  background: #000000;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-accent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--fill-accent);
+  color: var(--on-accent);
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.15s ease;
+}
+
+.btn-accent:hover {
+  background: var(--fill-accent-hover);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 18px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  font-weight: 500;
+  font-size: 14px;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-secondary:hover {
+  background: var(--surface-3);
+  border-color: var(--text-secondary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badge-success {
+  background: var(--badge-success-bg);
+  color: var(--text-success);
+}
+
+.badge-danger {
+  background: var(--badge-danger-bg);
+  color: var(--text-danger);
+}
+
+.badge-warning {
+  background: var(--badge-warning-bg);
+  color: var(--text-warning);
+}
+
+.badge-neutral {
+  background: var(--badge-neutral-bg);
+  color: var(--text-secondary);
+}
+
+@keyframes cartBadgeBounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.4); }
+  60% { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+
+.cart-badge-animate {
+  animation: cartBadgeBounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}

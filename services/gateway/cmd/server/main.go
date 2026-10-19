@@ -40,6 +40,9 @@ func main() {
 		OrderService:        config.String("ORDER_SERVICE_ADDR", "order-service:9004"),
 		PaymentService:      config.String("PAYMENT_SERVICE_ADDR", "payment-service:9005"),
 		NotificationService: config.String("NOTIFICATION_SERVICE_ADDR", "notification-service:9006"),
+		PaymentHTTPAddr:     config.String("PAYMENT_HTTP_ADDR", "http://payment-service:9105"),
+		RazorpayKeyID:       config.String("RAZORPAY_KEY_ID", "rzp_test_TpqYV7LOzHrIIO"),
+		RazorpayKeySecret:   config.String("RAZORPAY_KEY_SECRET", "2njLsTjN3BSSxuOrsUH0Dohx"),
 		RedisAddr:           config.String("REDIS_ADDR", "redis:6379"),
 		RedisPassword:       config.String("REDIS_PASSWORD", ""),
 		RedisDB:             config.Int("REDIS_DB", 0),
@@ -52,8 +55,17 @@ func main() {
 
 	mux := router.New(deps, log, []byte(config.MustString("JWT_SECRET")), config.String("ALLOWED_ORIGIN", "*"))
 
+	httpAddr := config.String("HTTP_ADDR", "")
+	if httpAddr == "" {
+		if port := os.Getenv("PORT"); port != "" {
+			httpAddr = ":" + port
+		} else {
+			httpAddr = ":8080"
+		}
+	}
+
 	srv := &http.Server{
-		Addr:              config.String("HTTP_ADDR", ":8080"),
+		Addr:              httpAddr,
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
 	}

@@ -39,6 +39,14 @@ func New(deps *handlers.Deps, log *slog.Logger, jwtSecret []byte, allowedOrigin 
 		r.Get("/products/{productID}/reviews", deps.ListReviews)
 		r.Get("/search", deps.SearchCatalog)
 
+		// --- Payment Webhooks & UPI Simulation (Public / Webhook Signature Verified) ---
+		r.Get("/payments/config", deps.PaymentConfig)
+		r.Post("/payments/razorpay/order", deps.CreateRazorpayOrder)
+		r.Post("/webhooks/razorpay", deps.RazorpayWebhookProxy)
+		r.Post("/webhooks/phonepe", deps.PhonePeWebhookProxy)
+		r.Post("/payments/phonepe/initiate", deps.InitiatePhonePePayment)
+		r.Post("/payments/simulate-upi", deps.SimulateUPIPayment)
+
 		// --- Requires a valid JWT ---
 		r.Group(func(r chi.Router) {
 			r.Use(gatewaymw.RequireAuth(jwtSecret))

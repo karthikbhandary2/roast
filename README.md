@@ -373,17 +373,22 @@ Planned infra containers: Postgres (one server, one database per service for loc
 - [x] API Gateway: all routes, auth/logging middleware, SSE order-status relay (compiles)
 - [x] Local infrastructure: `docker-compose.yml` (Postgres, Redis, Kafka, Jaeger), `Makefile`, `.env.example`, shared Dockerfile
 - [x] User Service: register/login/logout, JWT issuing, seller onboarding and admin approval, audit trail
+- [x] Product, Order, Payment, Search, Notification services (gRPC services, repositories, and domain logic)
+- [x] Order saga orchestrator (checkout fan-out, reserve -> charge -> confirm, compensations, Redis Pub/Sub status push)
+- [x] Product reservation logic with deterministic row locking, releases, and reviews
+- [x] Payment charge, platform-fee split, append-only ledger, seller balances, payouts, and webhooks (Razorpay and Stripe)
+- [x] Search indexer (Kafka to Elasticsearch) and SearchService querying/facets
+- [x] Notification Service dispatcher (Kafka consumers and dispatch worker)
+- [x] Sweepers (reservation expiry, awaiting-payment timeout, auto-delivered)
+- [x] `pkg/money` minor unit scales, fee calculation, and provider routing checks
+- [x] Full `docker-compose.yml`, `Makefile`, and `go.work` covering all 7 microservices
 
 **Not yet done**
 
-- [ ] Product, Order, Payment, Search, Notification services (protos and migrations exist; no Go code)
-- [ ] Order saga orchestrator; Product reservation logic; Payment charge/split/ledger
-- [ ] Search indexer (Kafka to Elasticsearch); payment and shipping webhook handlers
-- [ ] Sweepers (reservation expiry, awaiting-payment timeout, auto-delivered)
 - [ ] `Refresh` RPC (refresh tokens are issued and stored, but nothing can redeem them yet)
 - [ ] Revocation enforced in the gRPC interceptor (today only `ValidateToken` checks `tokens_valid_after`)
 - [ ] Gateway input validation; OpenTelemetry spans (tracing is initialised, nothing creates spans)
-- [ ] React app (`web/`), `pkg/money`, tests, Prometheus/Grafana
+- [ ] React app (`web/`), Prometheus/Grafana
 
 **Caveats**
 

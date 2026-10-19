@@ -86,3 +86,19 @@ func RequireRole(ctx context.Context, role string) error {
 	}
 	return status.Errorf(codes.PermissionDenied, "requires role %q", role)
 }
+
+// ForwardMetadataUnaryClientInterceptor copies any incoming gRPC metadata
+// (authorization header, correlation ID, etc.) into outgoing metadata
+// so downstream service-to-service calls preserve auth and tracing.
+func ForwardMetadataUnaryClientInterceptor() grpc.UnaryClientInterceptor {
+	return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+		if md, ok := metadata.FromIncomingContext(ctx); ok {
+			if outMD, exists := metadata.FromOutgoingContext(ctx); exists {
+				ctx = metadata.NewOutgoingContext(ctx, metadata.Join(outMD, md))
+			} else {
+				ctx = metadata.NewOutgoingContext(ctx, md)
+			}
+		}
+		return invoker(ctx, method, req, reply, cc, opts...)
+	}
+}

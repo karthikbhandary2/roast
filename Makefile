@@ -3,7 +3,7 @@
 .RECIPEPREFIX := >
 
 # Every Go module in the repo. Add each new service here.
-MODULES := pkg gen/go services/gateway services/user
+MODULES := pkg gen/go services/gateway services/user services/product services/payment services/order services/search services/notification
 
 .PHONY: help proto tidy build test up up-min down reset logs ps
 
@@ -25,7 +25,7 @@ tidy:
 > @for m in $(MODULES); do echo "== tidy $$m"; (cd $$m && go mod tidy) || exit 1; done
 
 build:
-> @for m in services/gateway services/user; do echo "== build $$m"; (cd $$m && go build ./...) || exit 1; done
+> @for m in services/gateway services/user services/product services/payment services/order services/search services/notification; do echo "== build $$m"; (cd $$m && go build ./...) || exit 1; done
 
 test:
 > @for m in $(MODULES); do echo "== test $$m"; (cd $$m && go test ./...) || exit 1; done
