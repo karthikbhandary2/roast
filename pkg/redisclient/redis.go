@@ -19,6 +19,15 @@ type Client struct {
 }
 
 func New(addr, password string, db int) *Client {
+	// If addr is a full redis connection URL (e.g. redis://user:pass@host:port),
+	// parse it directly.
+	if opt, err := redis.ParseURL(addr); err == nil {
+		if password != "" {
+			opt.Password = password
+		}
+		return &Client{rdb: redis.NewClient(opt)}
+	}
+
 	return &Client{
 		rdb: redis.NewClient(&redis.Options{
 			Addr:     addr,

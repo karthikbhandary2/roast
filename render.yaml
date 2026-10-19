@@ -38,16 +38,11 @@ services:
         fromDatabase:
           name: roast-co-db
           property: connectionString
-      - key: REDIS_ADDR
+      - key: REDIS_URL
         fromService:
           type: redis
           name: roast-co-redis
-          property: host
-      - key: REDIS_PASSWORD
-        fromService:
-          type: redis
-          name: roast-co-redis
-          property: password
+          property: connectionString
 
   # 3. Cache - Managed Redis (Free tier)
   - type: redis

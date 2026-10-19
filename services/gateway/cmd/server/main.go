@@ -43,7 +43,7 @@ func main() {
 		PaymentHTTPAddr:     config.String("PAYMENT_HTTP_ADDR", "http://payment-service:9105"),
 		RazorpayKeyID:       config.String("RAZORPAY_KEY_ID", "rzp_test_TpqYV7LOzHrIIO"),
 		RazorpayKeySecret:   config.String("RAZORPAY_KEY_SECRET", "2njLsTjN3BSSxuOrsUH0Dohx"),
-		RedisAddr:           config.String("REDIS_ADDR", "redis:6379"),
+		RedisAddr:           config.String("REDIS_URL", config.String("REDIS_ADDR", "redis:6379")),
 		RedisPassword:       config.String("REDIS_PASSWORD", ""),
 		RedisDB:             config.Int("REDIS_DB", 0),
 	})
