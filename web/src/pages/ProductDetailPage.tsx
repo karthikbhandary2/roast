@@ -132,14 +132,11 @@ export const ProductDetailPage: React.FC = () => {
         </Link>
 
         {/* 2-Column layout matching product_detail_wireframe.html */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)',
-          gap: '32px',
+        <div className="grid-2col-responsive" style={{
           background: 'var(--surface-1)',
           border: '1px solid var(--border)',
           borderRadius: 'var(--radius-xl)',
-          padding: '32px',
+          padding: '24px',
           marginBottom: '40px',
         }}>
           {/* Left: Image / Roaster Details */}

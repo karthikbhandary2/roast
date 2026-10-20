@@ -56,11 +56,7 @@ export const SellerDashboardPage: React.FC = () => {
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             {/* 4 Metric cards matching seller_dashboard_wireframe.html */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '16px',
-            }}>
+            <div className="grid-4col-responsive">
               <div style={{
                 background: 'var(--surface-1)',
                 border: '1px solid var(--border)',

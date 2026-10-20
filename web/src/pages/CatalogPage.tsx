@@ -71,7 +71,7 @@ export const CatalogPage: React.FC = () => {
 
       <main className="container" style={{ padding: '24px 20px 48px' }}>
         {/* Filter bar matching catalog_search_wireframe.html */}
-        <div style={{
+        <div className="catalog-filter-bar" style={{
           display: 'flex',
           gap: '10px',
           marginBottom: '20px',
@@ -154,11 +154,7 @@ export const CatalogPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-            gap: '16px',
-          }}>
+          <div className="grid-catalog-responsive">
             {filteredProducts.map((p) => {
               const isSoldOut = p.stock_available <= 0 || p.status === 'PRODUCT_STATUS_SOLD_OUT';
               const isLowStock = p.stock_available > 0 && p.stock_available <= 5;

@@ -114,7 +114,7 @@ export const CheckoutPage: React.FC = () => {
     <div>
       <Navbar />
 
-      <main className="container" style={{ padding: '24px 20px 60px', maxWidth: '840px' }}>
+      <main className="container checkout-container-responsive" style={{ padding: '24px 20px 60px', maxWidth: '840px' }}>
         {/* Step indicator matching checkout_address_wireframe.html */}
         <div style={{
           display: 'flex',
@@ -122,6 +122,7 @@ export const CheckoutPage: React.FC = () => {
           alignItems: 'center',
           gap: '16px',
           marginBottom: '32px',
+          flexWrap: 'wrap',
         }}>
           {[
             { num: 1, label: 'Address' },
@@ -186,7 +187,7 @@ export const CheckoutPage: React.FC = () => {
           }}>
             <h2 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '20px' }}>Shipping Address</h2>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+            <div className="checkout-2col-responsive" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                   Full Name *
@@ -226,7 +227,7 @@ export const CheckoutPage: React.FC = () => {
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+            <div className="checkout-3col-responsive" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', marginBottom: '24px' }}>
               <div>
                 <label style={{ fontSize: '12px', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                   City *

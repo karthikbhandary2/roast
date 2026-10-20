@@ -87,30 +87,32 @@ export const SellerPayoutsPage: React.FC = () => {
                   No past transfers yet. Payouts initiate as soon as orders transition to delivered.
                 </div>
               ) : (
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                      <th style={{ padding: '8px 12px' }}>Payout ID</th>
-                      <th style={{ padding: '8px 12px' }}>Amount</th>
-                      <th style={{ padding: '8px 12px' }}>Status</th>
-                      <th style={{ padding: '8px 12px' }}>Date</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.payouts.map((p: any) => (
-                      <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                        <td style={{ padding: '12px' }}>{p.id.slice(0, 8)}</td>
-                        <td style={{ padding: '12px', fontWeight: 600 }}>{formatMoney(p.amount)}</td>
-                        <td style={{ padding: '12px' }}>
-                          <span className="badge badge-success">{p.status}</span>
-                        </td>
-                        <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
-                          {new Date(p.created_at).toLocaleDateString()}
-                        </td>
+                <div className="table-responsive">
+                  <table style={{ width: '100%', minWidth: '500px', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                        <th style={{ padding: '8px 12px' }}>Payout ID</th>
+                        <th style={{ padding: '8px 12px' }}>Amount</th>
+                        <th style={{ padding: '8px 12px' }}>Status</th>
+                        <th style={{ padding: '8px 12px' }}>Date</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.payouts.map((p: any) => (
+                        <tr key={p.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                          <td style={{ padding: '12px' }}>{p.id.slice(0, 8)}</td>
+                          <td style={{ padding: '12px', fontWeight: 600 }}>{formatMoney(p.amount)}</td>
+                          <td style={{ padding: '12px' }}>
+                            <span className="badge badge-success">{p.status}</span>
+                          </td>
+                          <td style={{ padding: '12px', color: 'var(--text-muted)' }}>
+                            {new Date(p.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

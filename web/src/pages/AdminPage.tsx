@@ -144,7 +144,8 @@ export const AdminPage: React.FC = () => {
                 ✓ No sellers currently awaiting review.
               </div>
             ) : (
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <div className="table-responsive">
+                <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
                     <th style={{ padding: '12px 16px', fontWeight: 600 }}>Business Name</th>
@@ -187,6 +188,7 @@ export const AdminPage: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
         ) : tab === 'inventory' ? (
@@ -197,30 +199,32 @@ export const AdminPage: React.FC = () => {
             borderRadius: 'var(--radius-xl)',
             overflow: 'hidden',
           }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Coffee</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Seller ID</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Price</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Stock</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventory.map((item) => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: 600 }}>{item.name}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{item.seller_id?.slice(0, 8)}...</td>
-                    <td style={{ padding: '14px 16px' }}>{formatMoney(item.price)}</td>
-                    <td style={{ padding: '14px 16px' }}>{item.stock_available}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className="badge badge-success">{item.status?.replace('PRODUCT_STATUS_', '')}</span>
-                    </td>
+            <div className="table-responsive">
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Coffee</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Seller ID</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Price</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Stock</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {inventory.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '14px 16px', fontWeight: 600 }}>{item.name}</td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{item.seller_id?.slice(0, 8)}...</td>
+                      <td style={{ padding: '14px 16px' }}>{formatMoney(item.price)}</td>
+                      <td style={{ padding: '14px 16px' }}>{item.stock_available}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span className="badge badge-success">{item.status?.replace('PRODUCT_STATUS_', '')}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           /* All Orders Table */
@@ -230,32 +234,34 @@ export const AdminPage: React.FC = () => {
             borderRadius: 'var(--radius-xl)',
             overflow: 'hidden',
           }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-              <thead>
-                <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Order ID</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Buyer ID</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Total</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
-                  <th style={{ padding: '12px 16px', fontWeight: 600 }}>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {orders.map((o) => (
-                  <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 16px', fontWeight: 600 }}>{o.id?.slice(0, 8)}</td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{o.buyer_id?.slice(0, 8)}...</td>
-                    <td style={{ padding: '14px 16px', fontWeight: 600 }}>{formatMoney(o.total)}</td>
-                    <td style={{ padding: '14px 16px' }}>
-                      <span className="badge badge-success">{o.status?.replace('ORDER_STATUS_', '')}</span>
-                    </td>
-                    <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>
-                      {new Date(o.created_at).toLocaleDateString()}
-                    </td>
+            <div className="table-responsive">
+              <table style={{ width: '100%', minWidth: '600px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface-2)', borderBottom: '1px solid var(--border)' }}>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Order ID</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Buyer ID</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Total</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
+                    <th style={{ padding: '12px 16px', fontWeight: 600 }}>Date</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {orders.map((o) => (
+                    <tr key={o.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                      <td style={{ padding: '14px 16px', fontWeight: 600 }}>{o.id?.slice(0, 8)}</td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>{o.buyer_id?.slice(0, 8)}...</td>
+                      <td style={{ padding: '14px 16px', fontWeight: 600 }}>{formatMoney(o.total)}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span className="badge badge-success">{o.status?.replace('ORDER_STATUS_', '')}</span>
+                      </td>
+                      <td style={{ padding: '14px 16px', color: 'var(--text-muted)' }}>
+                        {new Date(o.created_at).toLocaleDateString()}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

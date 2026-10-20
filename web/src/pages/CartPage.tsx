@@ -118,17 +118,13 @@ export const CartPage: React.FC = () => {
             <Link to="/" className="btn-primary">Browse Coffees</Link>
           </div>
         ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)',
-            gap: '28px',
-          }}>
+          <div className="grid-cart-responsive">
             {/* Items list */}
             <div style={{
               background: 'var(--surface-1)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-xl)',
-              padding: '24px',
+              padding: '20px',
             }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 {items.map((item) => {
@@ -138,6 +134,7 @@ export const CartPage: React.FC = () => {
                   return (
                     <div
                       key={item.product_id}
+                      className="cart-item-row"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
@@ -156,6 +153,7 @@ export const CartPage: React.FC = () => {
                         justifyContent: 'center',
                         fontSize: '24px',
                         border: '1px solid var(--border)',
+                        flexShrink: 0,
                       }}>
                         ☕
                       </div>
@@ -175,49 +173,51 @@ export const CartPage: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Quantity controls */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        border: '1px solid var(--border-strong)',
-                        borderRadius: 'var(--radius)',
-                        background: 'var(--surface-1)',
-                      }}>
+                      <div className="cart-item-controls" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        {/* Quantity controls */}
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          border: '1px solid var(--border-strong)',
+                          borderRadius: 'var(--radius)',
+                          background: 'var(--surface-1)',
+                        }}>
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+                            style={{ border: 'none', background: 'none', padding: '4px 10px', fontSize: '14px' }}
+                          >
+                            -
+                          </button>
+                          <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 600 }}>
+                            {item.quantity}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={isUpdating}
+                            onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+                            style={{ border: 'none', background: 'none', padding: '4px 10px', fontSize: '14px' }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {/* Line total */}
+                        <div style={{ minWidth: '70px', textAlign: 'right', fontSize: '14px', fontWeight: 700 }}>
+                          {formatMoney({ currency_code: currencyCode, amount_minor: lineTotalMinor })}
+                        </div>
+
+                        {/* Delete item */}
                         <button
                           type="button"
-                          disabled={isUpdating}
-                          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
-                          style={{ border: 'none', background: 'none', padding: '4px 10px', fontSize: '14px' }}
+                          onClick={() => updateQuantity(item.product_id, 0)}
+                          style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
+                          title="Remove"
                         >
-                          -
-                        </button>
-                        <span style={{ minWidth: '24px', textAlign: 'center', fontSize: '13px', fontWeight: 600 }}>
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          disabled={isUpdating}
-                          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
-                          style={{ border: 'none', background: 'none', padding: '4px 10px', fontSize: '14px' }}
-                        >
-                          +
+                          <i className="ti ti-trash" style={{ fontSize: '16px' }} />
                         </button>
                       </div>
-
-                      {/* Line total */}
-                      <div style={{ minWidth: '70px', textAlign: 'right', fontSize: '14px', fontWeight: 700 }}>
-                        {formatMoney({ currency_code: currencyCode, amount_minor: lineTotalMinor })}
-                      </div>
-
-                      {/* Delete item */}
-                      <button
-                        type="button"
-                        onClick={() => updateQuantity(item.product_id, 0)}
-                        style={{ border: 'none', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}
-                        title="Remove"
-                      >
-                        <i className="ti ti-trash" style={{ fontSize: '16px' }} />
-                      </button>
                     </div>
                   );
                 })}
